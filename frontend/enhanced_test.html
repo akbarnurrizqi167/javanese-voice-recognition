@@ -1,0 +1,695 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎯 Enhanced Javanese Aksara Voice Recognition</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #ff6b6b, #4ecdc4);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        
+        .header p {
+            font-size: 1.2em;
+            opacity: 0.9;
+        }
+        
+        .status-bar {
+            background: #f8f9fa;
+            padding: 15px 30px;
+            border-bottom: 1px solid #dee2e6;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        
+        .status-item {
+            display: flex;
+            align-items: center;
+            margin: 5px 0;
+        }
+        
+        .status-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+        
+        .status-online { background: #28a745; }
+        .status-offline { background: #dc3545; }
+        
+        .main-content {
+            padding: 30px;
+        }
+        
+        .testing-section {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 30px;
+            border: 2px solid #e9ecef;
+        }
+        
+        .section-title {
+            font-size: 1.5em;
+            color: #495057;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+        }
+        
+        .section-title .emoji {
+            font-size: 1.2em;
+            margin-right: 10px;
+        }
+        
+        .aksara-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .aksara-btn {
+            background: linear-gradient(135deg, #74b9ff, #0984e3);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            padding: 15px 10px;
+            font-size: 1.1em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+        }
+        
+        .aksara-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(116, 185, 255, 0.4);
+        }
+        
+        .aksara-btn.selected {
+            background: linear-gradient(135deg, #00b894, #00a085);
+            transform: scale(1.05);
+        }
+        
+        .recording-controls {
+            text-align: center;
+            margin: 30px 0;
+        }
+        
+        .record-btn {
+            background: linear-gradient(135deg, #fd79a8, #e84393);
+            color: white;
+            border: none;
+            border-radius: 50px;
+            padding: 20px 40px;
+            font-size: 1.2em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin: 0 10px;
+            min-width: 150px;
+        }
+        
+        .record-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(253, 121, 168, 0.4);
+        }
+        
+        .record-btn:disabled {
+            background: #6c757d;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        
+        .record-btn.recording {
+            background: linear-gradient(135deg, #ff3838, #ff1744);
+            animation: pulse 1.5s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+        
+        .upload-area {
+            border: 3px dashed #74b9ff;
+            border-radius: 15px;
+            padding: 40px;
+            text-align: center;
+            background: #f8f9fa;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            margin: 20px 0;
+        }
+        
+        .upload-area:hover {
+            border-color: #0984e3;
+            background: #e3f2fd;
+        }
+        
+        .upload-area.dragover {
+            border-color: #00b894;
+            background: #e8f5e8;
+        }
+        
+        .file-input {
+            display: none;
+        }
+        
+        .results-section {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            border: 2px solid #e9ecef;
+            margin-top: 20px;
+        }
+        
+        .result-card {
+            background: linear-gradient(135deg, #a8e6cf, #88d8a3);
+            border-radius: 15px;
+            padding: 20px;
+            margin: 15px 0;
+            color: #2d3436;
+        }
+        
+        .result-card.error {
+            background: linear-gradient(135deg, #ff7675, #d63031);
+            color: white;
+        }
+        
+        .result-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+        
+        .result-prediction {
+            font-size: 2em;
+            font-weight: bold;
+        }
+        
+        .result-confidence {
+            font-size: 1.2em;
+            opacity: 0.8;
+        }
+        
+        .top5-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+            gap: 10px;
+            margin-top: 15px;
+        }
+        
+        .top5-item {
+            background: rgba(255,255,255,0.2);
+            border-radius: 10px;
+            padding: 10px;
+            text-align: center;
+        }
+        
+        .progress-bar {
+            width: 100%;
+            height: 6px;
+            background: rgba(255,255,255,0.3);
+            border-radius: 3px;
+            overflow: hidden;
+            margin-top: 5px;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: #00b894;
+            border-radius: 3px;
+            transition: width 0.3s ease;
+        }
+        
+        .model-info {
+            background: linear-gradient(135deg, #6c5ce7, #a29bfe);
+            color: white;
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        
+        .model-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+        
+        .stat-item {
+            text-align: center;
+        }
+        
+        .stat-value {
+            font-size: 1.5em;
+            font-weight: bold;
+            display: block;
+        }
+        
+        .stat-label {
+            font-size: 0.9em;
+            opacity: 0.8;
+        }
+        
+        @media (max-width: 768px) {
+            .container {
+                margin: 10px;
+                border-radius: 15px;
+            }
+            
+            .header h1 {
+                font-size: 2em;
+            }
+            
+            .main-content {
+                padding: 20px;
+            }
+            
+            .aksara-grid {
+                grid-template-columns: repeat(4, 1fr);
+            }
+            
+            .status-bar {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎯 Enhanced Javanese Aksara Voice Recognition</h1>
+            <p>Advanced AI Model with 92% Accuracy • 20 Aksara Recognition</p>
+        </div>
+        
+        <div class="status-bar">
+            <div class="status-item">
+                <div class="status-dot" id="apiStatus"></div>
+                <span id="apiStatusText">Checking API...</span>
+            </div>
+            <div class="status-item">
+                <strong>Model:</strong> <span id="modelType">Loading...</span>
+            </div>
+            <div class="status-item">
+                <strong>Accuracy:</strong> <span id="modelAccuracy">--</span>
+            </div>
+            <div class="status-item">
+                <strong>Classes:</strong> <span id="classCount">20</span>
+            </div>
+        </div>
+        
+        <div class="main-content">
+            <!-- Model Information -->
+            <div class="model-info">
+                <h3>🚀 Enhanced CNN Model</h3>
+                <p>Trained on 2,000 samples with advanced preprocessing and data augmentation</p>
+                <div class="model-stats">
+                    <div class="stat-item">
+                        <span class="stat-value">92%</span>
+                        <span class="stat-label">Test Accuracy</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-value">2,000</span>
+                        <span class="stat-label">Training Samples</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-value">128</span>
+                        <span class="stat-label">Mel-bands</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-value">1.47M</span>
+                        <span class="stat-label">Parameters</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Aksara Selection -->
+            <div class="testing-section">
+                <div class="section-title">
+                    <span class="emoji">📝</span>
+                    Pilih Aksara Target untuk Testing
+                </div>
+                <div class="aksara-grid" id="aksaraGrid"></div>
+                <div style="text-align: center; margin-top: 15px; color: #6c757d;">
+                    <strong>Selected:</strong> <span id="selectedAksara">ha</span>
+                </div>
+            </div>
+            
+            <!-- Recording Section -->
+            <div class="testing-section">
+                <div class="section-title">
+                    <span class="emoji">🎤</span>
+                    Record Audio untuk Testing
+                </div>
+                <div class="recording-controls">
+                    <button class="record-btn" id="recordBtn" onclick="toggleRecording()">
+                        🎤 Start Recording
+                    </button>
+                    <button class="record-btn" id="stopBtn" onclick="stopRecording()" disabled>
+                        ⏹️ Stop Recording
+                    </button>
+                </div>
+                <div style="text-align: center; margin-top: 15px; color: #6c757d;">
+                    <div id="recordingStatus">Click "Start Recording" to begin</div>
+                    <audio id="audioPlayback" controls style="margin-top: 10px; display: none;"></audio>
+                </div>
+            </div>
+            
+            <!-- File Upload Section -->
+            <div class="testing-section">
+                <div class="section-title">
+                    <span class="emoji">📁</span>
+                    Upload Audio File
+                </div>
+                <div class="upload-area" onclick="document.getElementById('fileInput').click()">
+                    <div style="font-size: 3em; margin-bottom: 10px;">📁</div>
+                    <div style="font-size: 1.2em; margin-bottom: 5px;">Click to upload audio file</div>
+                    <div style="color: #6c757d;">Supports: WAV, MP3, M4A, OGG</div>
+                </div>
+                <input type="file" id="fileInput" class="file-input" accept="audio/*" onchange="handleFileUpload(this)">
+            </div>
+            
+            <!-- Results Section -->
+            <div class="results-section" id="resultsSection" style="display: none;">
+                <div class="section-title">
+                    <span class="emoji">🎯</span>
+                    Prediction Results
+                </div>
+                <div id="resultsContainer"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Configuration
+        const API_BASE = 'http://localhost:8000';
+        const CLASSES = ["ha", "na", "ca", "ra", "ka", "da", "ta", "sa", "wa", "la", "pa", "dha", "ja", "ya", "nya", "ma", "ga", "ba", "tha", "nga"];
+        
+        let selectedAksara = 'ha';
+        let mediaRecorder = null;
+        let audioChunks = [];
+        let isRecording = false;
+        
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            checkAPIStatus();
+            createAksaraGrid();
+            setupDragAndDrop();
+        });
+        
+        // Check API status
+        async function checkAPIStatus() {
+            try {
+                const response = await fetch(`${API_BASE}/health`);
+                const data = await response.json();
+                
+                document.getElementById('apiStatus').className = 'status-dot status-online';
+                document.getElementById('apiStatusText').textContent = 'API Online';
+                document.getElementById('modelType').textContent = data.model_type || 'Unknown';
+                document.getElementById('modelAccuracy').textContent = data.accuracy || '--';
+                document.getElementById('classCount').textContent = data.classes || '20';
+                
+                console.log('API Status:', data);
+            } catch (error) {
+                document.getElementById('apiStatus').className = 'status-dot status-offline';
+                document.getElementById('apiStatusText').textContent = 'API Offline';
+                console.error('API Error:', error);
+            }
+        }
+        
+        // Create aksara grid
+        function createAksaraGrid() {
+            const grid = document.getElementById('aksaraGrid');
+            grid.innerHTML = '';
+            
+            CLASSES.forEach(aksara => {
+                const btn = document.createElement('button');
+                btn.className = 'aksara-btn';
+                btn.textContent = aksara;
+                btn.onclick = () => selectAksara(aksara);
+                if (aksara === selectedAksara) {
+                    btn.classList.add('selected');
+                }
+                grid.appendChild(btn);
+            });
+        }
+        
+        // Select aksara
+        function selectAksara(aksara) {
+            selectedAksara = aksara;
+            document.getElementById('selectedAksara').textContent = aksara;
+            
+            // Update button states
+            document.querySelectorAll('.aksara-btn').forEach(btn => {
+                btn.classList.remove('selected');
+                if (btn.textContent === aksara) {
+                    btn.classList.add('selected');
+                }
+            });
+        }
+        
+        // Recording functions
+        async function toggleRecording() {
+            if (!isRecording) {
+                try {
+                    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                    mediaRecorder = new MediaRecorder(stream);
+                    audioChunks = [];
+                    
+                    mediaRecorder.ondataavailable = (event) => {
+                        audioChunks.push(event.data);
+                    };
+                    
+                    mediaRecorder.onstop = () => {
+                        const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
+                        const audioUrl = URL.createObjectURL(audioBlob);
+                        
+                        const audioPlayback = document.getElementById('audioPlayback');
+                        audioPlayback.src = audioUrl;
+                        audioPlayback.style.display = 'block';
+                        
+                        // Auto-predict when recording stops
+                        predictFromBlob(audioBlob);
+                    };
+                    
+                    mediaRecorder.start();
+                    isRecording = true;
+                    
+                    document.getElementById('recordBtn').textContent = '🔴 Recording...';
+                    document.getElementById('recordBtn').classList.add('recording');
+                    document.getElementById('recordBtn').disabled = true;
+                    document.getElementById('stopBtn').disabled = false;
+                    document.getElementById('recordingStatus').textContent = `Recording audio for "${selectedAksara}"...`;
+                    
+                } catch (error) {
+                    console.error('Recording error:', error);
+                    alert('Could not access microphone. Please check permissions.');
+                }
+            }
+        }
+        
+        function stopRecording() {
+            if (mediaRecorder && isRecording) {
+                mediaRecorder.stop();
+                mediaRecorder.stream.getTracks().forEach(track => track.stop());
+                isRecording = false;
+                
+                document.getElementById('recordBtn').textContent = '🎤 Start Recording';
+                document.getElementById('recordBtn').classList.remove('recording');
+                document.getElementById('recordBtn').disabled = false;
+                document.getElementById('stopBtn').disabled = true;
+                document.getElementById('recordingStatus').textContent = 'Recording completed. Processing...';
+            }
+        }
+        
+        // File upload handling
+        function handleFileUpload(input) {
+            const file = input.files[0];
+            if (file) {
+                predictFromFile(file);
+            }
+        }
+        
+        // Drag and drop setup
+        function setupDragAndDrop() {
+            const uploadArea = document.querySelector('.upload-area');
+            
+            uploadArea.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                uploadArea.classList.add('dragover');
+            });
+            
+            uploadArea.addEventListener('dragleave', () => {
+                uploadArea.classList.remove('dragover');
+            });
+            
+            uploadArea.addEventListener('drop', (e) => {
+                e.preventDefault();
+                uploadArea.classList.remove('dragover');
+                
+                const files = e.dataTransfer.files;
+                if (files.length > 0) {
+                    predictFromFile(files[0]);
+                }
+            });
+        }
+        
+        // Prediction functions
+        async function predictFromFile(file) {
+            await predict(file, 'file');
+        }
+        
+        async function predictFromBlob(blob) {
+            const file = new File([blob], 'recording.wav', { type: 'audio/wav' });
+            await predict(file, 'recording');
+        }
+        
+        async function predict(file, source) {
+            const formData = new FormData();
+            formData.append('file', file);
+            formData.append('target', selectedAksara);
+            
+            try {
+                showLoading();
+                
+                const response = await fetch(`${API_BASE}/predict`, {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const result = await response.json();
+                displayResults(result, source);
+                
+            } catch (error) {
+                console.error('Prediction error:', error);
+                displayError(`Error: ${error.message}`);
+            }
+        }
+        
+        // Display functions
+        function showLoading() {
+            const resultsSection = document.getElementById('resultsSection');
+            const container = document.getElementById('resultsContainer');
+            
+            container.innerHTML = `
+                <div class="result-card">
+                    <div style="text-align: center;">
+                        <div style="font-size: 2em;">🔄</div>
+                        <div>Processing audio...</div>
+                    </div>
+                </div>
+            `;
+            
+            resultsSection.style.display = 'block';
+        }
+        
+        function displayResults(result, source) {
+            const container = document.getElementById('resultsContainer');
+            
+            if (result.error) {
+                displayError(result.error);
+                return;
+            }
+            
+            const isCorrect = result.pred === selectedAksara;
+            const statusIcon = isCorrect ? '✅' : '❌';
+            const cardClass = isCorrect ? 'result-card' : 'result-card error';
+            
+            const top5Html = result.top5.map(item => `
+                <div class="top5-item">
+                    <div style="font-weight: bold;">${item.label}</div>
+                    <div style="font-size: 0.9em;">${(item.p * 100).toFixed(1)}%</div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width: ${item.p * 100}%"></div>
+                    </div>
+                </div>
+            `).join('');
+            
+            container.innerHTML = `
+                <div class="${cardClass}">
+                    <div class="result-header">
+                        <div>
+                            <div style="font-size: 1.1em;">Target: <strong>${selectedAksara}</strong></div>
+                            <div style="font-size: 0.9em; opacity: 0.8;">Source: ${source}</div>
+                        </div>
+                        <div style="text-align: right;">
+                            <div class="result-prediction">${statusIcon} ${result.pred}</div>
+                            <div class="result-confidence">${(result.conf * 100).toFixed(1)}% confidence</div>
+                        </div>
+                    </div>
+                    
+                    <div style="margin-bottom: 15px;">
+                        <strong>Status:</strong> ${result.status} (Score: ${result.score}%)
+                    </div>
+                    
+                    <div style="margin-bottom: 10px;">
+                        <strong>Model:</strong> ${result.model_mode} • <strong>Accuracy:</strong> ${result.model_accuracy}
+                    </div>
+                    
+                    <div>
+                        <strong>Top 5 Predictions:</strong>
+                        <div class="top5-grid">
+                            ${top5Html}
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+        
+        function displayError(message) {
+            const container = document.getElementById('resultsContainer');
+            container.innerHTML = `
+                <div class="result-card error">
+                    <div style="text-align: center;">
+                        <div style="font-size: 2em;">❌</div>
+                        <div style="margin-top: 10px;">${message}</div>
+                    </div>
+                </div>
+            `;
+        }
+    </script>
+</body>
+</html>

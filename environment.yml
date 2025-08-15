@@ -1,0 +1,17 @@
+name: jv-voice
+channels:
+  - conda-forge
+dependencies:
+  - python=3.10
+  - numpy
+  - scipy
+  - librosa
+  - ffmpeg
+  - pip
+  - pip:
+      - fastapi
+      - uvicorn
+      - gradio
+      - soundfile
+      - pydub
+      - onnxruntime

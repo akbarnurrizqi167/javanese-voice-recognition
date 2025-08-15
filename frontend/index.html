@@ -1,0 +1,110 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Demo Pengucapan Aksara Jawa - Model Retrain v2</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    body { font-family: system-ui, sans-serif; max-width: 700px; margin: 24px auto; padding: 0 12px; }
+    .card { border: 1px solid #ddd; border-radius: 12px; padding: 16px; box-shadow: 0 2px 8px rgba(0,0,0,.05); }
+    button { padding: 10px 16px; border-radius: 10px; border: 0; cursor: pointer; }
+    .primary { background: black; color: white; }
+    .muted { color: #666; }
+    .score { font-size: 20px; margin-top: 8px; }
+    .ok { color: #0a7a28; } .warn { color: #b58900; } .bad { color: #b00020; }
+    select { padding: 6px; border-radius: 8px; }
+  </style>
+</head>
+<body>
+  <h2>Demo Pengucapan Aksara Jawa - Model Retrain v2</h2>
+  <div class="card">
+    <p class="muted">🎯 Model Enhanced CNN - 94.67% accuracy | 20 Aksara Jawa lengkap</p>
+    <label for="target">Target bunyi:</label>
+    <select id="target">
+      <option>ba</option><option>ca</option><option>da</option><option>dha</option>
+      <option>ga</option><option>ha</option><option>ja</option><option>ka</option>
+      <option>la</option><option>ma</option><option>na</option><option>nga</option>
+      <option>nya</option><option>pa</option><option>ra</option><option>sa</option>
+      <option>ta</option><option>tha</option><option>wa</option><option>ya</option>
+    </select>
+
+    <div style="margin:12px 0">
+      <button id="recBtn" class="primary">🎙️ Rekam</button>
+      <span id="hint" class="muted">Tekan “Rekam”, ucapkan ≤1–2 detik.</span>
+    </div>
+
+    <audio id="player" controls style="width:100%; display:none;"></audio>
+
+    <div id="result" class="score"></div>
+    <div id="top5" class="muted"></div>
+  </div>
+
+<script>
+let mediaRecorder, chunks = [];
+const recBtn = document.getElementById('recBtn');
+const resultEl = document.getElementById('result');
+const top5El = document.getElementById('top5');
+const player = document.getElementById('player');
+const targetSel = document.getElementById('target');
+const API_URL = "http://localhost:8001/predict";
+
+recBtn.onclick = async () => {
+  try {
+    if (!mediaRecorder || mediaRecorder.state === "inactive") {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const mime = MediaRecorder.isTypeSupported('audio/webm') ? 'audio/webm' :
+                   (MediaRecorder.isTypeSupported('audio/ogg') ? 'audio/ogg' :
+                   (MediaRecorder.isTypeSupported('audio/mp4') ? 'audio/mp4' : 'audio/webm'));
+      mediaRecorder = new MediaRecorder(stream, { mimeType: mime });
+      chunks = [];
+      mediaRecorder.ondataavailable = e => chunks.push(e.data);
+      mediaRecorder.onstop = async () => {
+        const blob = new Blob(chunks, { type: mediaRecorder.mimeType });
+        player.src = URL.createObjectURL(blob);
+        player.style.display = 'block';
+        await sendToServer(blob);
+        recBtn.textContent = "🎙️ Rekam";
+      };
+      mediaRecorder.start();
+      recBtn.textContent = "⏹️ Stop";
+    } else {
+      mediaRecorder.stop();
+    }
+  } catch (e) {
+    resultEl.innerHTML = `<span class="bad">Mic error: ${e}</span>`;
+  }
+};
+
+async function sendToServer(blob){
+  const form = new FormData();
+  form.append("file", blob, "audio.dat");
+  const target = targetSel.value;
+  const url = `${API_URL}?target=${encodeURIComponent(target)}`;
+  try {
+    const r = await fetch(url, { method: "POST", body: form });
+    const js = await r.json();
+    renderResult(js, target);
+  } catch (e) {
+    resultEl.innerHTML = `<span class="bad">Gagal: ${e}</span>`;
+  }
+}
+
+function renderResult(js, target){
+  if (js.error){
+    resultEl.innerHTML = `<span class="bad">${js.error}</span>`;
+    top5El.textContent = "";
+    return;
+  }
+  const { pred, conf, score, status, top5 } = js;
+  let cls = "bad";
+  if (status && status.startsWith("✅")) cls = "ok";
+  else if (status && status.startsWith("⚠️")) cls = "warn";
+  const s = (score !== null && score !== undefined) ? `, Skor ${score}` : "";
+  resultEl.innerHTML = `<span class="${cls}">${status || ""}</span> — Target: <b>${target}</b>, Pred: <b>${pred}</b> (${conf})${s}`;
+  if (top5 && Array.isArray(top5)){
+    top5El.textContent = "Top-5: " + top5.map(x => `${x.label}: ${x.p.toFixed(2)}`).join(" | ");
+  }
+}
+</script>
+</body>
+</html>
